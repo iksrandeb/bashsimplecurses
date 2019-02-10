@@ -6,14 +6,14 @@
 #
 #create_buffer patch by Laurent Bachelier
 #
-#restriction to local variables and 
+#restriction to local variables and
 #rename variables to ones which will not collide
 #by Markus Mikkolainen
 #
 #support for bgcolors by Markus Mikkolainen
 #
-#support for delay loop function (instead of sleep, 
-#enabling keyboard input) by Markus Mikkolainen 
+#support for delay loop function (instead of sleep,
+#enabling keyboard input) by Markus Mikkolainen
 
 bsc_create_buffer(){
     local BUFFER_DIR
@@ -24,7 +24,7 @@ bsc_create_buffer(){
         BUFFER_DIR="$TMPDIR"
     else
         BUFFER_DIR="/tmp"
-    fi 
+    fi
     local buffername
     [[ "$1" != "" ]] &&  buffername=$1 || buffername="bashsimplecurses"
 
@@ -37,7 +37,8 @@ bsc_create_buffer(){
     fi
 }
 
-#Usefull variables
+
+#usefull variables
 BSC_LASTCOLS=0
 BSC_BUFFER=`bsc_create_buffer`
 BSC_POSX=0
@@ -45,7 +46,7 @@ BSC_POSY=0
 BSC_LASTWINPOS=0
 
 #call on SIGINT and SIGKILL
-#it removes buffer before to stop
+#it removes buffer before exiting
 bsc_on_kill(){
     tput cup 0 0 >> $BSC_BUFFER
     # Erase in-buffer
@@ -71,24 +72,28 @@ bsc_term_init(){
 bsc__nl(){
     BSC_POSY=$((BSC_POSY+1))
     tput cup $BSC_POSY $BSC_POSX >> $BSC_BUFFER
-    #echo 
 }
 
 
+#move up
 move_up(){
     set_position $BSC_POSX 0
 }
 
+
+#move to right column
 col_right(){
     left=$((BSC_LASTCOLS+BSC_POSX))
     set_position $left $BSC_LASTWINPOS
 }
+
 
 #put display coordinates
 set_position(){
     BSC_POSX=$1
     BSC_POSY=$2
 }
+
 
 #initialize chars to use
 _TL="\033(0l\033(B"
@@ -103,6 +108,8 @@ _DIAMOND="\033(00\033(B"
 _BLOCK="\033(01\033(B"
 _SPINNER=('-' '\' '|' '/')
 
+
+#initialize chars
 bsc_init_chars(){
     if [[ -z "$BSC_ASCIIMODE" && $LANG =~ .*\.UTF-8 ]] ; then BSC_ASCIIMODE=utf8; fi
     if [[ "$BSC_ASCIIMODE" != "" ]]; then
@@ -134,16 +141,16 @@ bsc_init_chars(){
 }
 
 
-#Append a windo on BSC_POSX,BSC_POSY
+#append a window on BSC_POSX, BSC_POSY
 window(){
     BSC_LASTWINPOS=$BSC_POSY
     local title
     local color
     local bgcolor
     title=$1
-    color=$2        
+    color=$2
     bgcolor=$4
-    tput cup $BSC_POSY $BSC_POSX 
+    tput cup $BSC_POSY $BSC_POSX
     bsc_cols=$(tput cols)
     bsc_cols=$((bsc_cols))
     if [[ "$3" != "" ]]; then
@@ -175,7 +182,7 @@ window(){
     #set title color
     setcolor $color
     setbgcolor $bgcolor
-    
+
     echo $title
     reset_colors
     tput rc
@@ -185,13 +192,18 @@ window(){
     bsc__nl
     #then draw bottom line for title
     addsep
-    
-    BSC_LASTCOLS=$bsc_cols
 
+    BSC_LASTCOLS=$bsc_cols
 }
+
+
+#reset colors
 reset_colors(){
     echo -ne "\033[00m"
 }
+
+
+#set foreground color
 setcolor(){
     local color
     color=$1
@@ -225,6 +237,9 @@ setcolor(){
             ;;
     esac
 }
+
+
+#set background color
 setbgcolor(){
     local bgcolor
     bgcolor=$1
@@ -262,8 +277,14 @@ setbgcolor(){
     esac
 
 }
-#append a separator, new line
-addsep (){
+
+
+#
+#  append a separator, new line
+#
+#  addsep [fgcolor] [bgcolor]
+#
+addsep(){
     clean_line
     echo -ne $_SEPL
     local i
@@ -285,7 +306,11 @@ clean_line(){
 }
 
 
-#add text on current window
+#
+#  add text on current window
+#
+#  append_file [centering]
+#
 append_file(){
     local align
     [[ "$1" != "" ]] && align="left" || align=$1
@@ -300,6 +325,8 @@ append_file(){
 
     reset_colors
 }
+
+
 #
 #   blinkenlights <text> <color> <color2> <incolor> <bgcolor> <light1> [light2...]
 #
@@ -314,7 +341,7 @@ blinkenlights(){
     text=$1
     color=$2
     color2=$3
-    incolor=$4  
+    incolor=$4
     bgcolor=$5
 
     declare -a params
@@ -336,12 +363,13 @@ blinkenlights(){
         params=( "${params[@]}" )
     done
 
-    bsc__multiappend "left" "[" $incolor $bgcolor $lights "]${text}" $incolor $bgcolor 
+    bsc__multiappend "left" "[" $incolor $bgcolor $lights "]${text}" $incolor $bgcolor
 }
+
 
 #
 #   vumeter <text> <width> <value> <max> [color] [color2] [inactivecolor] [bgcolor]
-#   
+#
 vumeter(){
     local done
     local todo
@@ -378,7 +406,7 @@ vumeter(){
     green=""
     red=""
     rest=""
-    
+
     for i in `seq 1 $(($done))`;do
         green="${green}|"
     done
@@ -392,8 +420,8 @@ vumeter(){
     [ "$red" == ""  ] && bsc__multiappend "left" "[" $incolor "black" "${green}" $okcolor "black" "${rest}]${text}" $incolor "black"
     [ "$red" != ""  ] && bsc__multiappend "left" "[" $incolor "black" "${green}" $okcolor "black" "${red}" $overcolor "black" "${rest}]${text}" $incolor "black"
 }
-#
-#
+
+
 #
 #   progressbar <length> <progress> <max> [color] [bgcolor]
 #
@@ -408,11 +436,11 @@ progressbar(){
     len=$1
     progress=$2
     max=$3
-    
+
     done=$(( progress * len / max ))
     todo=$(( len - done - 1 ))
     modulo=$(( progress % 4 ))
-    
+
     bar="[";
     for (( c=1; c<=done; c++ )); do
         bar="${bar}${_BLOCK}"
@@ -426,6 +454,8 @@ progressbar(){
     bar="${bar}]"
     bsc__append "$bar" "left" $4 $5
 }
+
+
 append(){
     text=$(echo -e "$1" | fold -w $((BSC_LASTCOLS-3)) -s)
     rbuffer=`bsc_create_buffer bashsimplecursesfilebuffer`
@@ -437,9 +467,10 @@ append(){
     done < $rbuffer
     rm -f $rbuffer
 }
+
 #
-#   append a single line of text consisting of multiple
-#   segments
+#   append a single line of text consisting of multiple segments
+#
 #   bsc__multiappend <centering> (<text> <color> <bgcolor>)+
 #
 bsc__multiappend(){
@@ -454,7 +485,7 @@ bsc__multiappend(){
         text="${text}${params[0]}"
         unset params[0]
         unset params[1]
-        unset params[2]    
+        unset params[2]
         params=( "${params[@]}" )
     done
     clean_line
@@ -463,7 +494,7 @@ bsc__multiappend(){
     len=$(echo "$text" | wc -c )
     len=$((len-1))
     bsc_left=$((BSC_LASTCOLS/2 - len/2 -1))
-    
+
     params=( "$@")
     [[ "${params[0]}" == "left" ]] && bsc_left=0
     unset params[0]
@@ -484,6 +515,8 @@ bsc__multiappend(){
     echo -ne $_VLINE
     bsc__nl
 }
+
+
 #
 #   bsc__append <text> [centering] [color] [bgcolor]
 #
@@ -495,7 +528,7 @@ bsc__append(){
     len=$(echo "$1" | wc -c )
     len=$((len-1))
     bsc_left=$((BSC_LASTCOLS/2 - len/2 -1))
-    
+
     [[ "$2" == "left" ]] && bsc_left=0
 
     tput cuf $bsc_left
@@ -509,23 +542,27 @@ bsc__append(){
     bsc__nl
 }
 
-#add separated values on current window
+#
+#  add separated values on current window
+#
+#  append_tabbed <text> <nbcol> [separator] [fgcolor] [bgcolor]
+#
 append_tabbed(){
     [[ $2 == "" ]] && echo "append_tabbed: Second argument needed" >&2 && exit 1
     [[ "$3" != "" ]] && delim=$3 || delim=":"
     clean_line
-    
+
     echo -ne $_VLINE
     local len
     len=$(echo "$1" | wc -c )
     len=$((len-1))
-    bsc_left=$((BSC_LASTCOLS/$2)) 
-    
+    bsc_left=$((BSC_LASTCOLS/$2))
+
     setcolor $4
     setbgcolor $5
     tput sc
 
-    local i 
+    local i
     for i in `seq 0 $(($2))`; do
         tput rc
         tput cuf $((bsc_left*i+1))
@@ -539,7 +576,10 @@ append_tabbed(){
     bsc__nl
 }
 
-#append a command output
+
+#
+#  append a command output
+#
 append_command(){
     local buff
     buff=`bsc_create_buffer command`
@@ -551,6 +591,7 @@ append_command(){
     reset_colors
 }
 
+
 #close the window display
 endwin(){
     clean_line
@@ -560,16 +601,17 @@ endwin(){
     bsc__nl
 }
 
+
+
 #refresh display
-refresh (){
+refresh(){
     cat $BSC_BUFFER
     echo "" > $BSC_BUFFER
 }
 
 
-
 #main loop called
-main_loop (){
+main_loop(){
     bsc_term_init
     bsc_init_chars
     local time
@@ -581,11 +623,11 @@ main_loop (){
     while [[ 1 ]];do
         tput cup 0 0 >> $BSC_BUFFER
         tput il $(tput lines) >>$BSC_BUFFER
-        main >> $BSC_BUFFER 
-        tput cup $(tput lines) $(tput cols) >> $BSC_BUFFER 
+        main >> $BSC_BUFFER
+        tput cup $(tput lines) $(tput cols) >> $BSC_BUFFER
         refresh
         if ! [[ $time =~ $number_re ]] ; then
-            #call function with name $time 
+            #call function with name $time
             eval $time
             retval=$?
             [ "$retval" == "0" ] || {
@@ -594,7 +636,7 @@ main_loop (){
             }
         else
             sleep $time
-        fi   
+        fi
         BSC_POSX=0
         BSC_POSY=0
     done
